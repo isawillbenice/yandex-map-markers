@@ -9,11 +9,10 @@
     "underscore": "^1.7.0"
   },
   "main": [
-    "src/client/styles/less/map.less",
-    "src/client/scripts/js/map.js",
+    "src/client/styles/less/yandex-map-markers.less",
+    "src/client/scripts/js/yandex-map-markers.js",
     "src/client/images/marker.png",
-    "src/client/json/config.json",
-    "src/client/templates/map.html"
+    "src/client/json/data.json"
   ],
   "ignore": [
     "*.md",

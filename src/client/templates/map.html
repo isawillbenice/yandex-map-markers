@@ -1,0 +1,54 @@
+<!doctype html>
+<html lang="">
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="description" content="A front-end template that helps you build fast, modern mobile web apps.">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Yandex Map Markers</title>
+
+    <!-- Add to homescreen for Chrome on Android -->
+    <meta name="mobile-web-app-capable" content="yes">
+    <link rel="icon" sizes="192x192" href="images/touch/chrome-touch-icon-192x192.png">
+
+    <!-- Add to homescreen for Safari on iOS -->
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black">
+    <meta name="apple-mobile-web-app-title" content="Web Starter Kit">
+    <link rel="apple-touch-icon-precomposed" href="apple-touch-icon-precomposed.png">
+
+    <!-- Tile icon for Win8 (144x144 + tile color) -->
+    <meta name="msapplication-TileImage" content="images/touch/ms-touch-icon-144x144-precomposed.png">
+    <meta name="msapplication-TileColor" content="#3372DF">
+
+    <!-- Page styles -->
+    <link rel="stylesheet" href="../styles/css/style.min.css">
+
+    <!-- Page scripts -->
+    <script src="../scripts/js/script.min.js" async="" defer=""></script>
+</head>
+<body>
+<div class="map_section">
+    <div id="map" class="js__map-container"></div>
+    <div class="list-container js__list-container">
+        <h1>Список</h1>
+        <div class="list-container__items js__list-container__items">
+        </div>
+    </div>
+    <div class="control-panel">
+        <span class="control-panel__map"><a class="btn js__map" href="#">На карте</a></span>
+        <span class="control-panel__list"><a class="btn js__list" href="#">Списком</a></span>
+    </div>
+</div>
+
+<script type="text/template" id="list-container__items">
+    <div class="list-container__item">
+        <p><%= name %></p>
+        <p><%= address %></p>
+        <p><%= phone %></p>
+    </div>
+</script>
+
+<script src="http://api-maps.yandex.ru/2.1/?lang=ru_RU" type="text/javascript"></script>
+</body>
+</html>

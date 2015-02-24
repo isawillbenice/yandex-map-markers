@@ -2,8 +2,8 @@ define('app', [
     'domReady',
     'jquery',
     'underscore',
-    'map'
-],  function ( domReady, $, _, Map) {
+    'yandex-map-markers'
+],  function ( domReady, $, _, YandexMapMarkers) {
     'use strict';
 
     console.log('%cfile: app.js', 'color: #C2ECFF');
@@ -19,7 +19,7 @@ define('app', [
 
         _this = this;
 
-        var map = new Map('map');
+        var yandexMapMarkers = new YandexMapMarkers('map');
 
         domReady(function () {
             console.log('%ctrace: App -> constructor -> domReady', 'color: #ccc');

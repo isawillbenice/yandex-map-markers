@@ -1,8 +1,8 @@
-define('map', [
+define('yandex-map-markers', [
     'jquery',
     'underscore',
-    'text!../../json/config.json',
-], function ($, _, config) {
+    'text!../../json/data.json',
+], function ($, _, DataJson) {
     'use strict';
 
     var self;
@@ -27,7 +27,7 @@ define('map', [
     function Map(map_id, options) {
         self = this;
 
-        var markers_data = JSON.parse(config);
+        var markers_data = JSON.parse(DataJson);
         ymaps.ready(function() {
             self.initialize(map_id, markers_data, options);
         });

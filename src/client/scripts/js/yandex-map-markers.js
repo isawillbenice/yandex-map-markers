@@ -23,123 +23,261 @@ define('yandex-map-markers', [
         }
     };
 
+    var __balloon_template = function() {
+        self.marker_balloon_layout = ymaps.templateLayoutFactory.createClass(
+            '<div class="baloon-content">' +
+            '<div class="baloon-title">$[properties.name]</div>' +
+            '<div class="baloon-region">$[properties.region], $[properties.city]</div>' +
+            '<div class="baloon-address">$[properties.address]</div>' +
+            '</div>'
+        );
+        ymaps.layout.storage.add('map#marker_balloon_layout', self.marker_balloon_layout);
+    };
+
+    var __add_markers = function() {
+        self.objectManager.add(self.markers_data);
+    };
 
     function Map(map_id, options) {
         self = this;
 
-        var markers_data = JSON.parse(DataJson);
+        if(typeof ymaps == 'undefined') {
+            return false;
+        }
+
+        self.markers_data = JSON.parse(DataJson);
+
         ymaps.ready(function() {
-            self.initialize(map_id, markers_data, options);
+            self.initialize(map_id, options);
         });
     }
 
     Map.prototype = {
-        initialize: function(map_id, markers_data, options) {
-            self._init_map(map_id, options);
-            self._init_map_controls();
-            self._init_my_controls();
-            self._init_templates();
-            self._init_list_items(markers_data);
-            self._add_markers(markers_data);
+        initialize: function(map_id, options) {
+            self.init_map(map_id, options);
+            self.init_ballon_template();
+            self.init_map_controls();
+            self.init_my_controls();
+            self.init_object_manager();
+            self.add_markers();
+            self.getVisibleMarkers();
+            //self.geolocation();
         },
 
-        _init_map: function(map_id, options) {
+        //Инициализация карты
+        init_map: function(map_id, options) {
             var init_options = $.extend({}, map_options.default_options, options);
             self.map = new ymaps.Map(
                 map_id,
                 init_options
             );
+
+            self.map.behaviors.disable('scrollZoom');
         },
 
-        _init_templates: function() {
-            this._balloon_template();
+        //Инициализация ObjectManager
+        init_object_manager: function() {
+            self.objectManager = new ymaps.ObjectManager({
+                clusterize: true,
+                geoObjectPreset: 'islands#greenDotIcon',
+                geoObjectBalloonContentLayout: self.marker_balloon_layout,
+                geoObjectBalloonMaxWidth: 505,
+                geoObjectBalloonMaxHeight: 215,
+                geoObjectHideIconOnBalloonOpen: false,
+                geoObjectIconLayout: 'default#image',
+                geoObjectIconImageHref: map_options.markers_options.iconImageHref,
+                geoObjectIconImageSize: [36, 36],
+                geoObjectIconImageOffset: [-18, -18],
+                clusterBalloonContentLayout: 'cluster#balloonCarouselContent',
+                clusterBalloonItemContentLayout: self.marker_balloon_layout,
+                clusterballoonWidth: 505,
+                clusterBalloonHeight: 215,
+                clustergroupByCoordinates: false,
+                clusterDisableClickZoom: false,
+                clusterHideIconOnBalloonOpen: false
+            });
+
+            self.map.geoObjects.add(self.objectManager);
         },
 
-        _init_map_controls: function() {
+        //Инициализация элементов урпавления для карты
+        init_map_controls: function() {
             for (var control in map_options.controls_types) {
-                this.map.controls.add(control, {
+                self.map.controls.add(control, {
                     float: 'none',
                     position: map_options.controls_types[control]
                 });
             }
         },
 
-        _init_my_controls: function() {
-            $('body').on('click', '.js__map', _.bind(self.showMap, self));
-            $('body').on('click', '.js__list', _.bind(self.showList, self));
-        },
-
-        _balloon_template: function() {
-            self.marker_balloon_layout = ymaps.templateLayoutFactory.createClass(
-                '<div class="baloon-content">' +
-                '<div class="baloon-title">$[properties.name]</div>' +
-                '<div class="baloon-region">$[properties.region]</div>' +
-                '<div class="baloon-address"><label>Адрес: </label>$[properties.address]</div>' +
-                '</div>'
-            );
-            ymaps.layout.storage.add('map#marker_balloon_layout', self.marker_balloon_layout);
-        },
-
-        _init_list_items: function(markers_data) {
-            var template = _.template($('#list-container__items').html());
-            var content = '';
-
-            _.each(markers_data, function(item) {
-                content += template(item);
+        //Инициализация дополнительных элементов управления
+        init_my_controls: function() {
+            self.map.events.add(['boundschange','datachange','objecttypeschange'], function(e){
+                /* self.objectManager.objects.balloon.close();
+                 self.objectManager.clusters.balloon.close();*/
+                self.getVisibleMarkers();
             });
 
-            $('.js__list-container__items').html(content);
+            $('body').on('click', '.js__show-all-addresses', _.bind(self.showAllAddresses, self));
+            $('body').on('click', '.js__show-main-addresses', _.bind(self.showMainAddresses, self));
+            $('body').on('click', '.js__select-address', _.bind(self.selectAddresses, self));
+            $('body').on('click', '.js__select-optics', _.bind(self.selectOptics, self));
         },
 
-        _add_markers: function(markers_data) {
-            var markers = [];
+        //Инициализация шаблона для балунов
+        init_ballon_template: function() {
+            __balloon_template();
+        },
 
-            var marker_options = {
-                balloonContentLayout: self.marker_balloon_layout,
-                balloonMaxWidth: 505,
-                balloonMaxHeight: 215,
-                hideIconOnBalloonOpen: false,
-                iconLayout: 'default#image',
-                iconImageHref: map_options.markers_options.iconImageHref,
-                iconImageSize: [36, 36],
-                iconImageOffset: [-18, -18]
+        //Добавление меток на карту
+        add_markers: function() {
+            __add_markers();
+        },
+
+        //Получит видимые метки
+        getVisibleMarkers: function() {
+            var result = ymaps.geoQuery(self.objectManager.objects).searchInside(self.map);
+            result.then(function () {
+                self.showOptics(result);
+            });
+        },
+
+        //Центрирование по адресу
+        setCenterByAddress: function(address) {
+            ymaps.geocode(address, {
+                results: 1
+            }).then(function (res) {
+                var firstGeoObject = res.geoObjects.get(0),
+                    bounds = firstGeoObject.properties.get('boundedBy');
+
+                self.map.setBounds(bounds, {
+                    checkZoomRange: true
+                });
+            });
+        },
+
+        //Геолокация
+        geolocation: function() {
+            var geolocation = ymaps.geolocation;
+            geolocation.get({
+                provider: 'auto',
+                autoReverseGeocode: true
+            }).then(function (res) {
+                var firstGeoObject = res.geoObjects.get(0),
+                    bounds = firstGeoObject.properties.get('boundedBy');
+
+                self.map.setBounds(bounds, {
+                    checkZoomRange: true
+                });
+            });
+        },
+
+        //Показать оптику
+        showOptics: function(optics) {
+            var i = 1,
+                templateOpticsItem = _.template($('#js__optics__item-template').html()),
+                contentOptics = '';
+
+            optics.each(function(optic) {
+                var item = {
+                    id: optic.properties.get('id'),
+                    name: optic.properties.get('name'),
+                    region: optic.properties.get('region'),
+                    city: optic.properties.get('city'),
+                    address: optic.properties.get('address'),
+                    description: optic.properties.get('description'),
+                    i: i
+                };
+
+                i++;
+                contentOptics += templateOpticsItem(item);
+            });
+
+            $('.js__optics').html(contentOptics);
+        },
+
+        //Показать все адреса (города)
+        showAllAddresses: function() {
+            $('.js__all-addresses').css('display', 'block');
+            $('.js__main-addresses').css('display', 'none');
+            return false;
+        },
+
+        //Показать главные адреса (города)
+        showMainAddresses: function() {
+            $('.js__all-addresses').css('display', 'none');
+            $('.js__main-addresses').css('display', 'block');
+            return false;
+        },
+
+        //Выбрать адрес (город)
+        selectAddresses: function(e) {
+            var $el = $(e.currentTarget),
+                $id = $el.attr('data-id'),
+                templateSurroundingCitiesItem = _.template($('#js__surrounding-cities-item-template').html()),
+                contentSurroundingCities = '',
+                surrounding_cities = [];
+
+            var finded = self.objectManager.objects.getById($id);
+
+            var current_item = {
+                id: finded.properties.id,
+                region: finded.properties.region,
+                city: finded.properties.city
             };
 
-
-            var clusterer = new ymaps.Clusterer({
-                clusterBalloonContentLayout: 'cluster#balloonCarouselContent',
-                clusterBalloonItemContentLayout: self.marker_balloon_layout,
-                groupByCoordinates: false,
-                clusterDisableClickZoom: false,
-                clusterHideIconOnBalloonOpen: false,
-                geoObjectHideIconOnBalloonOpen: false
+            self.objectManager.objects.each(function(object) {
+                if(object.properties.region == current_item.region && object.properties.region != $id) {
+                    surrounding_cities.push(object.properties);
+                }
             });
 
-            var len = markers_data.length;
-            for(var i = 0; i < len; i++) {
-                var marker_properties = markers_data[i];
-                var latlng = marker_properties.latlng.split(',')
-                var coord = [parseFloat(latlng[0]), parseFloat(latlng[1])];
-                var marker = new ymaps.Placemark(coord, marker_properties, marker_options);
-                markers.push(marker);
-            }
+            surrounding_cities = _.uniq(surrounding_cities, function(el) {
+                return el.city;
+            });
 
-            clusterer.add(markers);
-            self.map.geoObjects.add(clusterer);
-        },
+            _.each(surrounding_cities, function(item){
+                contentSurroundingCities += templateSurroundingCitiesItem(item);
+            });
 
-        showMap: function() {
-            $('.js__map-container').css('display', 'block');
-            $('.js__list-container').css('display', 'none');
+            self.setCenterByAddress('Россия, ' + current_item.region + ', ' + current_item.city);
+
+            $('.js__select-address').removeClass('active');
+            $('.js__select-address[data-id= "'+ $id + '"]').addClass('active');
+            $('.js__current_city').html(current_item.city);
+            $('.js__surrounding_cities').html(contentSurroundingCities);
             return false;
         },
 
-        showList: function() {
-            $('.js__list-container').css('display', 'block');
-            $('.js__map-container').css('display', 'none');
+        //Выбрать оптику
+        selectOptics: function(e) {
+            var $el = $(e.currentTarget),
+                $id = $el.attr('data-id');
+
+            var finded = self.objectManager.objects.getById($id);
+            var coord = finded.geometry.coordinates;
+
+            self.map.setCenter(coord, 17)
+                .then(function () {
+                    setTimeout(function() {
+                        var objectState = self.objectManager.getObjectState($id);
+                        // Проверяем, находится ли объект в видимой области карты.
+                        if (objectState.isShown) {
+                            // Если объект попадает в кластер, открываем балун кластера с нужным выбранным объектом.
+                            if (objectState.isClustered) {
+                                self.objectManager.clusters.state.set('activeObject', finded);
+                                self.objectManager.clusters.balloon.open(objectState.cluster.id);
+                            } else {
+                                // Если объект не попал в кластер, открываем его собственный балун.
+                                self.objectManager.objects.balloon.open($id);
+                            }
+                        }
+                    }, 300);
+                });
+
             return false;
         }
-    }
+    };
 
     return Map;
 });

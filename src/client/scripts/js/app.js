@@ -19,7 +19,7 @@ define('app', [
 
         _this = this;
 
-        var yandexMapMarkers = new YandexMapMarkers('map');
+        new YandexMapMarkers('map');
 
         domReady(function () {
             console.log('%ctrace: App -> constructor -> domReady', 'color: #ccc');

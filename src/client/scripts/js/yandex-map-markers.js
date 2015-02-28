@@ -1,8 +1,7 @@
 define('yandex-map-markers', [
     'jquery',
-    'underscore',
-    'text!../../json/data.json',
-], function ($, _, DataJson) {
+    'underscore'
+], function ($, _) {
     'use strict';
 
     var self;
@@ -45,10 +44,19 @@ define('yandex-map-markers', [
             return false;
         }
 
-        self.markers_data = JSON.parse(DataJson);
+        $.ajax({
+            url: '/json/data.json',
+            data: {},
+            success: function(data){
+                console.log(data);
 
-        ymaps.ready(function() {
-            self.initialize(map_id, options);
+                self.markers_data = data;
+
+                ymaps.ready(function() {
+                    self.initialize(map_id, options);
+                });
+            },
+            dataType: 'json'
         });
     }
 

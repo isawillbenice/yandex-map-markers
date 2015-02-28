@@ -48,7 +48,6 @@ define('yandex-map-markers', [
             url: '/json/data.json',
             data: {},
             success: function(data){
-                console.log(data);
 
                 self.markers_data = data;
 

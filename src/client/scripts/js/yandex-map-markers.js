@@ -235,7 +235,7 @@ define('yandex-map-markers', [
             };
 
             self.objectManager.objects.each(function(object) {
-                if(object.properties.region == current_item.region && object.properties.region != $id) {
+                if(object.properties.region == current_item.region && object.properties.city != current_item.city) {
                     surrounding_cities.push(object.properties);
                 }
             });
@@ -248,7 +248,7 @@ define('yandex-map-markers', [
                 contentSurroundingCities += templateSurroundingCitiesItem(item);
             });
 
-            self.setCenterByAddress('Россия, ' + current_item.region + ', ' + current_item.city);
+            self.setCenterByAddress(current_item.city);
 
             $('.js__select-address').removeClass('active');
             $('.js__select-address[data-id= "'+ $id + '"]').addClass('active');

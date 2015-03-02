@@ -1,12 +1,18 @@
 define('yandex-map-markers', [
+    'domReady',
     'jquery',
     'underscore',
     'backbone',
     'yandex-map-api'
-], function ($, _, Backbone, YandexMapApi) {
+], function (domReady, $, _, Backbone, YandexMapApi) {
     'use strict';
 
+    console.log('%cfile: yandex-map-markers.js', 'color: #C2ECFF');
+
     var self;
+    var router;
+    var Deferred = $.Deferred();
+    var __dataLoaded = false;
     var map_options = {
         default_options: {
             center: [55.751574, 37.573856],
@@ -67,7 +73,7 @@ define('yandex-map-markers', [
         $('.js__current_city').html(city);
         $('.js__surrounding_cities').html(contentSurroundingCities);
         return false;
-    }
+    };
 
     var __findObjectInObjectManager = function(id) {
         var finded = self.objectManager.objects.getById(id);
@@ -83,7 +89,7 @@ define('yandex-map-markers', [
         };
 
         return finded_item;
-    }
+    };
 
     var __findSurroundingCities = function(region, city) {
         var surrounding_cities = [];
@@ -99,46 +105,66 @@ define('yandex-map-markers', [
         });
 
         return surrounding_cities;
-    }
+    };
 
-    function Map(map_id, options) {
-        self = this;
-
-        new YandexMapApi('map');
-
+    var __dataLoader = function __dataLoader(){
         $.ajax({
             url: '/json/data.json',
             data: {},
             success: function(data){
+                console.log('%ctrace: Map -> ajax', 'color: #ccc');
 
                 self.markers_data = data;
-
                 ymaps.ready(function() {
-                    self.initialize(map_id, options);
+                    self.initialize();
+                    __dataLoaded = true;
+                    Deferred.resolve();
                 });
             },
             dataType: 'json'
         });
+
+        return Deferred.promise();
+    };
+
+    function Map(map_id, options) {
+        console.log('%ctrace: Map -> constructor', 'color: #ccc');
+
+        self = this;
+        self.map_id = map_id;
+        self.options = options;
+
+        new YandexMapApi();
+
+        self.init_routes();
+
+        if(!window.location.hash){
+            __dataLoader();
+        }
     }
 
     Map.prototype = {
-        initialize: function(map_id, options) {
-            self.init_map(map_id, options);
+        initialize: function() {
+            console.log('%ctrace: Map -> initialize', 'color: #ccc');
+
+            self.init_map();
             self.init_ballon_template();
             self.init_map_controls();
             self.init_my_controls();
             self.init_object_manager();
             self.add_markers();
             self.getVisibleMarkers();
-            self.init_routes();
-            //self.geolocation();
+
+            if(!window.location.hash){
+                self.geolocation();
+            }
         },
 
         //Инициализация карты
-        init_map: function(map_id, options) {
-            var init_options = $.extend({}, map_options.default_options, options);
+        init_map: function() {
+            var init_options = $.extend({}, map_options.default_options, self.map_id);
             self.map = new ymaps.Map(
-                map_id,
+                self.map_id,
                 init_options
             );
 
@@ -183,14 +209,11 @@ define('yandex-map-markers', [
         //Инициализация дополнительных элементов управления
         init_my_controls: function() {
             self.map.events.add(['boundschange','datachange','objecttypeschange'], function(e){
-                /* self.objectManager.objects.balloon.close();
-                 self.objectManager.clusters.balloon.close();*/
                 self.getVisibleMarkers();
             });
 
             $('body').on('click', '.js__show-all-addresses', _.bind(self.showAllAddresses, self));
             $('body').on('click', '.js__show-main-addresses', _.bind(self.showMainAddresses, self));
-            /*$('body').on('click', '.js__select-address', _.bind(self.selectAddress, self));*/
             $('body').on('click', '.js__select-optics', _.bind(self.selectOptics, self));
         },
 
@@ -200,16 +223,25 @@ define('yandex-map-markers', [
         },
 
         init_routes: function() {
+            console.log('%ctrace: Map -> init_routes', 'color: #ccc');
+
             var Router = Backbone.Router.extend({
                 routes: {
-                    'city/:id': 'select-address'
+                    'city/:id': 'select_address'
                 }
             });
 
-            var router = new Router();
+            router = new Router();
 
-            router.on('route:select-address', function (id) {
-                __select_address(id);
+            router.on('route:select_address', function (id) {
+                if(__dataLoaded){
+                    __select_address(id);
+                    return true;
+                }
+
+                __dataLoader().done(function() {
+                    __select_address(id);
+                });
             });
         },
 

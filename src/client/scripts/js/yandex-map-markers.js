@@ -134,6 +134,11 @@ define('yandex-map-markers', [
         self.map_id = map_id;
         self.options = options;
 
+        if($('#' + self.map_id).length <= 0){
+            console.warn('%ctrace: Map: not found dom elements', 'color: #ccc');
+            return false;
+        }
+
         new YandexMapApi();
 
         self.init_routes();
@@ -282,6 +287,8 @@ define('yandex-map-markers', [
             }).then(function (res) {
                 var firstGeoObject = res.geoObjects.get(0),
                     bounds = firstGeoObject.properties.get('boundedBy');
+
+                //console.log(self.objectManager.objects.getClosestTo(firstGeoObject));
 
                 self.map.setBounds(bounds, {
                     checkZoomRange: true

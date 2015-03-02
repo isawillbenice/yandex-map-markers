@@ -1,7 +1,8 @@
 define('yandex-map-markers', [
     'jquery',
-    'underscore'
-], function ($, _) {
+    'underscore',
+    'yandex-map-api'
+], function ($, _, YandexMapApi) {
     'use strict';
 
     var self;
@@ -40,9 +41,7 @@ define('yandex-map-markers', [
     function Map(map_id, options) {
         self = this;
 
-        if(typeof ymaps == 'undefined') {
-            return false;
-        }
+        new YandexMapApi('map');
 
         $.ajax({
             url: '/json/data.json',

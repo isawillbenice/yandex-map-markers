@@ -1,8 +1,9 @@
 define('yandex-map-markers', [
     'jquery',
     'underscore',
+    'backbone',
     'yandex-map-api'
-], function ($, _, YandexMapApi) {
+], function ($, _, Backbone, YandexMapApi) {
     'use strict';
 
     var self;
@@ -23,7 +24,7 @@ define('yandex-map-markers', [
         }
     };
 
-    var __balloon_template = function() {
+    var __balloonTemplate = function() {
         self.marker_balloon_layout = ymaps.templateLayoutFactory.createClass(
             '<div class="baloon-content">' +
             '<div class="baloon-title">$[properties.name]</div>' +
@@ -34,9 +35,71 @@ define('yandex-map-markers', [
         ymaps.layout.storage.add('map#marker_balloon_layout', self.marker_balloon_layout);
     };
 
-    var __add_markers = function() {
+    var __addMarkers = function() {
         self.objectManager.add(self.markers_data);
     };
+
+    var __select_address = function(id) {
+        var templateSurroundingCitiesItem = _.template($('#js__surrounding-cities-item-template').html()),
+            contentSurroundingCities = '';
+
+        var finded_item = __findObjectInObjectManager(id);
+        var surrounding_cities = __findSurroundingCities(finded_item.region, finded_item.city);
+
+        _.each(surrounding_cities, function(item){
+            contentSurroundingCities += templateSurroundingCitiesItem(item);
+        });
+
+        var address_full;
+
+        if(finded_item.city == 'г. Москва') {
+            address_full = 'Россия, ' + finded_item.city;
+        } else {
+            address_full = 'Россия, ' + finded_item.region + ', ' + finded_item.city;
+        }
+
+        self.setCenterByAddress(address_full);
+
+        $('.js__select-address').removeClass('active');
+        $('.js__select-address[data-id= "'+ id + '"]').addClass('active');
+        var city = finded_item.city;
+        city = city.replace('г. ', '');
+        $('.js__current_city').html(city);
+        $('.js__surrounding_cities').html(contentSurroundingCities);
+        return false;
+    }
+
+    var __findObjectInObjectManager = function(id) {
+        var finded = self.objectManager.objects.getById(id);
+
+        if(!finded) {
+            return false;
+        }
+
+        var finded_item = {
+            id: finded.properties.id,
+            region: finded.properties.region,
+            city: finded.properties.city
+        };
+
+        return finded_item;
+    }
+
+    var __findSurroundingCities = function(region, city) {
+        var surrounding_cities = [];
+
+        self.objectManager.objects.each(function(object) {
+            if(object.properties.region == region && object.properties.city != city) {
+                surrounding_cities.push(object.properties);
+            }
+        });
+
+        surrounding_cities = _.uniq(surrounding_cities, function(el) {
+            return el.city;
+        });
+
+        return surrounding_cities;
+    }
 
     function Map(map_id, options) {
         self = this;
@@ -67,6 +130,7 @@ define('yandex-map-markers', [
             self.init_object_manager();
             self.add_markers();
             self.getVisibleMarkers();
+            self.init_routes();
             //self.geolocation();
         },
 
@@ -126,18 +190,32 @@ define('yandex-map-markers', [
 
             $('body').on('click', '.js__show-all-addresses', _.bind(self.showAllAddresses, self));
             $('body').on('click', '.js__show-main-addresses', _.bind(self.showMainAddresses, self));
-            $('body').on('click', '.js__select-address', _.bind(self.selectAddresses, self));
+            /*$('body').on('click', '.js__select-address', _.bind(self.selectAddress, self));*/
             $('body').on('click', '.js__select-optics', _.bind(self.selectOptics, self));
         },
 
         //Инициализация шаблона для балунов
         init_ballon_template: function() {
-            __balloon_template();
+            __balloonTemplate();
+        },
+
+        init_routes: function() {
+            var Router = Backbone.Router.extend({
+                routes: {
+                    'city/:id': 'select-address'
+                }
+            });
+
+            var router = new Router();
+
+            router.on('route:select-address', function (id) {
+                __select_address(id);
+            });
         },
 
         //Добавление меток на карту
         add_markers: function() {
-            __add_markers();
+            __addMarkers();
         },
 
         //Получит видимые метки
@@ -151,7 +229,8 @@ define('yandex-map-markers', [
         //Центрирование по адресу
         setCenterByAddress: function(address) {
             ymaps.geocode(address, {
-                results: 1
+                results: 1,
+                kind: 'locality'
             }).then(function (res) {
                 var firstGeoObject = res.geoObjects.get(0),
                     bounds = firstGeoObject.properties.get('boundedBy');
@@ -217,50 +296,12 @@ define('yandex-map-markers', [
         },
 
         //Выбрать адрес (город)
-        selectAddresses: function(e) {
+        selectAddress: function(e) {
             var $el = $(e.currentTarget),
-                $id = $el.attr('data-id'),
-                templateSurroundingCitiesItem = _.template($('#js__surrounding-cities-item-template').html()),
-                contentSurroundingCities = '',
-                surrounding_cities = [];
+                $id = $el.attr('data-id');
 
-            var finded = self.objectManager.objects.getById($id);
+            __select_address($id);
 
-            var current_item = {
-                id: finded.properties.id,
-                region: finded.properties.region,
-                city: finded.properties.city
-            };
-
-            self.objectManager.objects.each(function(object) {
-                if(object.properties.region == current_item.region && object.properties.city != current_item.city) {
-                    surrounding_cities.push(object.properties);
-                }
-            });
-
-            surrounding_cities = _.uniq(surrounding_cities, function(el) {
-                return el.city;
-            });
-
-            _.each(surrounding_cities, function(item){
-                item.city = item.city.replace('г. ', '');
-                contentSurroundingCities += templateSurroundingCitiesItem(item);
-            });
-
-            var address_full;
-
-            if(current_item.city == 'г. Москва') {
-                address_full = 'Россия, ' + current_item.city;
-            } else {
-                address_full = 'Россия, ' + current_item.region + ', ' + current_item.city;
-            }
-
-            self.setCenterByAddress(address_full);
-
-            $('.js__select-address').removeClass('active');
-            $('.js__select-address[data-id= "'+ $id + '"]').addClass('active');
-            $('.js__current_city').html(current_item.city.replace('г. ', ''));
-            $('.js__surrounding_cities').html(contentSurroundingCities);
             return false;
         },
 

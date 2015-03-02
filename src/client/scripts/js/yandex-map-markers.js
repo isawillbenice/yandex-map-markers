@@ -243,14 +243,23 @@ define('yandex-map-markers', [
             });
 
             _.each(surrounding_cities, function(item){
+                item.city = item.city.replace('г. ', '');
                 contentSurroundingCities += templateSurroundingCitiesItem(item);
             });
 
-            self.setCenterByAddress(current_item.city);
+            var address_full;
+
+            if(current_item.city == 'г. Москва') {
+                address_full = 'Россия, ' + current_item.city;
+            } else {
+                address_full = 'Россия, ' + current_item.region + ', ' + current_item.city;
+            }
+
+            self.setCenterByAddress(address_full);
 
             $('.js__select-address').removeClass('active');
             $('.js__select-address[data-id= "'+ $id + '"]').addClass('active');
-            $('.js__current_city').html(current_item.city);
+            $('.js__current_city').html(current_item.city.replace('г. ', ''));
             $('.js__surrounding_cities').html(contentSurroundingCities);
             return false;
         },

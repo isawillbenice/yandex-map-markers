@@ -207,8 +207,8 @@ define('yandex-map-markers', [
                 geoObjectIconImageOffset: [-18, -18],
                 clusterBalloonContentLayout: 'cluster#balloonCarouselContent',
                 clusterBalloonItemContentLayout: self.marker_balloon_layout,
-                clusterballoonWidth: 505,
-                clusterBalloonHeight: 215,
+                clusterBalloonMaxWidth: 505,
+                clusterBalloonMaxHeight: 215,
                 clustergroupByCoordinates: false,
                 clusterDisableClickZoom: false,
                 clusterHideIconOnBalloonOpen: false
@@ -322,33 +322,6 @@ define('yandex-map-markers', [
                         $(this).addClass('active');
                     }
                 });
-
-                /*var city = ymaps.geoQuery(self.objectManager.objects).getClosestTo(firstGeoObject).properties.get('city');
-                city = city.replace('г. ', '');
-
-                $('.js__select-address').each(function() {
-                    if($(this).children().text() == city) {
-                        $('.js__current_city').html(city);
-                        $('.js__select-address').removeClass('active');
-                        $(this).addClass('active');
-                     }
-                });*/
-
-                /*var id = ymaps.geoQuery(self.objectManager.objects).getClosestTo(firstGeoObject).properties.get('id');
-                var finded_item = __findObjectInObjectManager(id);
-                console.log(finded_item);
-                var surrounding_cities = __findSurroundingCities(finded_item.region, finded_item.city);
-                console.log(surrounding_cities);
-                var contentSurroundingCities = '';
-                var templateSurroundingCitiesItem = _.template($('#js__surrounding-cities-item-template').html());
-                _.each(surrounding_cities, function(item){
-                    console.log(item);
-                    contentSurroundingCities += templateSurroundingCitiesItem(item);
-                });
-
-
-
-                $('.js__surrounding_cities').html(contentSurroundingCities);*/
             });
         },
 

@@ -122,7 +122,7 @@ define('yandex-map-markers', [
     };
 
     //Загрузка данных для меток
-    var __dataLoader = function __dataLoader(){
+    var __dataLoader = function(){
         $.ajax({
             url: '/json/data.json',
             data: {},
@@ -299,17 +299,27 @@ define('yandex-map-markers', [
             var geolocation = ymaps.geolocation;
             geolocation.get({
                 provider: 'auto',
-                autoReverseGeocode: true
+                mapStateAutoApply: true
             }).then(function (res) {
-                var firstGeoObject = res.geoObjects.get(0),
-                    bounds = firstGeoObject.properties.get('boundedBy');
+                var firstObject = res.geoObjects.get(0);
+                var closestObject = ymaps.geoQuery(self.objectManager.objects).getClosestTo(firstObject);
+                var id = closestObject.properties.get('id');
+                var finded_item = __findObjectInObjectManager(id);
+
+                firstObject.options.set('preset', 'islands#geolocationIcon');
+                firstObject.options.set('hideIconOnBalloonOpen', false);
+                firstObject.properties.set({
+                    balloonContentBody: 'Мое местоположение'
+                });
+
+                self.map.geoObjects.add(firstObject);
+
+                var bounds = ymaps.geoQuery(firstObject).add(closestObject).getBounds();
 
                 self.map.setBounds(bounds, {
                     checkZoomRange: true
                 });
 
-                var id = ymaps.geoQuery(self.objectManager.objects).getClosestTo(firstGeoObject).properties.get('id');
-                var finded_item = __findObjectInObjectManager(id);
                 __viewSurroundingCities(finded_item);
 
                 var city = finded_item.city;

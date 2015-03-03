@@ -6,7 +6,8 @@
     "requirejs-text": "2.0.13",
     "requirejs-domready": "2.0.1",
     "jquery": "^2.1.1",
-    "underscore": "^1.7.0"
+    "underscore": "^1.7.0",
+    "jquery.scrollTo": "^1.4.14"
   },
   "main": [
     "src/client/styles/less/yandex-map-markers.less",

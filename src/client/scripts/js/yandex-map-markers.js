@@ -3,7 +3,8 @@ define('yandex-map-markers', [
     'jquery',
     'underscore',
     'backbone',
-    'yandex-map-api'
+    'yandex-map-api',
+    'jquery.scrollTo',
 ], function (domReady, $, _, Backbone, YandexMapApi) {
     'use strict';
 
@@ -65,6 +66,11 @@ define('yandex-map-markers', [
 
         $('.js__select-address').removeClass('active');
         $('.js__select-address[data-id= "'+ id + '"]').addClass('active');
+
+        self.$body.scrollTo('#map__current_city', {
+            duration: '800',
+            offsetTop : '250'
+        });
 
         return false;
     };
@@ -147,6 +153,7 @@ define('yandex-map-markers', [
         console.log('%ctrace: Map -> constructor', 'color: #ccc');
 
         self = this;
+        self.$body = $('body');
         self.map_id = map_id;
         self.options = options;
 
@@ -409,6 +416,11 @@ define('yandex-map-markers', [
                         }
                     }, 300);
                 });
+
+            self.$body.scrollTo('#map__current_city', {
+                duration: '800',
+                offsetTop : '250'
+            });
 
             return false;
         }

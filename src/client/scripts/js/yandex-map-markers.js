@@ -30,6 +30,7 @@ define('yandex-map-markers', [
         }
     };
 
+    //Шаблон для балуна
     var __balloonTemplate = function() {
         self.marker_balloon_layout = ymaps.templateLayoutFactory.createClass(
             '<div class="baloon-content">' +
@@ -41,20 +42,15 @@ define('yandex-map-markers', [
         ymaps.layout.storage.add('map#marker_balloon_layout', self.marker_balloon_layout);
     };
 
+    //Добавление меток в objectManager
     var __addMarkers = function() {
         self.objectManager.add(self.markers_data);
     };
 
+    //Выбрать адрес
     var __select_address = function(id) {
-        var templateSurroundingCitiesItem = _.template($('#js__surrounding-cities-item-template').html()),
-            contentSurroundingCities = '';
-
         var finded_item = __findObjectInObjectManager(id);
-        var surrounding_cities = __findSurroundingCities(finded_item.region, finded_item.city);
-
-        _.each(surrounding_cities, function(item){
-            contentSurroundingCities += templateSurroundingCitiesItem(item);
-        });
+        __viewSurroundingCities(finded_item);
 
         var address_full;
 
@@ -68,13 +64,28 @@ define('yandex-map-markers', [
 
         $('.js__select-address').removeClass('active');
         $('.js__select-address[data-id= "'+ id + '"]').addClass('active');
-        var city = finded_item.city;
-        city = city.replace('г. ', '');
-        $('.js__current_city').html(city);
-        $('.js__surrounding_cities').html(contentSurroundingCities);
+
         return false;
     };
 
+    //Отрисовать ближайшие города и текущий город
+    var __viewSurroundingCities = function(item) {
+        var templateSurroundingCitiesItem = _.template($('#js__surrounding-cities-item-template').html()),
+            contentSurroundingCities = '';
+
+        var surrounding_cities = __findSurroundingCities(item.region, item.city);
+
+        _.each(surrounding_cities, function(item){
+            contentSurroundingCities += templateSurroundingCitiesItem(item);
+        });
+
+        var city = item.city;
+        city = city.replace('г. ', '');
+        $('.js__current_city').html(city);
+        $('.js__surrounding_cities').html(contentSurroundingCities);
+    };
+
+    //Найти объект в objectManager
     var __findObjectInObjectManager = function(id) {
         var finded = self.objectManager.objects.getById(id);
 
@@ -85,12 +96,15 @@ define('yandex-map-markers', [
         var finded_item = {
             id: finded.properties.id,
             region: finded.properties.region,
-            city: finded.properties.city
+            city: finded.properties.city,
+            name: finded.properties.name,
+            description: finded.properties.description
         };
 
         return finded_item;
     };
 
+    //Найти ближайшие города к выбраному городу
     var __findSurroundingCities = function(region, city) {
         var surrounding_cities = [];
 
@@ -107,6 +121,7 @@ define('yandex-map-markers', [
         return surrounding_cities;
     };
 
+    //Загрузка данных для меток
     var __dataLoader = function __dataLoader(){
         $.ajax({
             url: '/json/data.json',
@@ -158,11 +173,12 @@ define('yandex-map-markers', [
             self.init_my_controls();
             self.init_object_manager();
             self.add_markers();
-            self.getVisibleMarkers();
 
             if(!window.location.hash){
                 self.geolocation();
             }
+
+            self.getVisibleMarkers();
         },
 
         //Инициализация карты
@@ -288,11 +304,51 @@ define('yandex-map-markers', [
                 var firstGeoObject = res.geoObjects.get(0),
                     bounds = firstGeoObject.properties.get('boundedBy');
 
-                //console.log(self.objectManager.objects.getClosestTo(firstGeoObject));
-
                 self.map.setBounds(bounds, {
                     checkZoomRange: true
                 });
+
+                var id = ymaps.geoQuery(self.objectManager.objects).getClosestTo(firstGeoObject).properties.get('id');
+                var finded_item = __findObjectInObjectManager(id);
+                __viewSurroundingCities(finded_item);
+
+                var city = finded_item.city;
+                city = city.replace('г. ', '');
+
+                $('.js__select-address').removeClass('active');
+
+                $('.js__select-address').each(function() {
+                    if($(this).children().text() == city) {
+                        $(this).addClass('active');
+                    }
+                });
+
+                /*var city = ymaps.geoQuery(self.objectManager.objects).getClosestTo(firstGeoObject).properties.get('city');
+                city = city.replace('г. ', '');
+
+                $('.js__select-address').each(function() {
+                    if($(this).children().text() == city) {
+                        $('.js__current_city').html(city);
+                        $('.js__select-address').removeClass('active');
+                        $(this).addClass('active');
+                     }
+                });*/
+
+                /*var id = ymaps.geoQuery(self.objectManager.objects).getClosestTo(firstGeoObject).properties.get('id');
+                var finded_item = __findObjectInObjectManager(id);
+                console.log(finded_item);
+                var surrounding_cities = __findSurroundingCities(finded_item.region, finded_item.city);
+                console.log(surrounding_cities);
+                var contentSurroundingCities = '';
+                var templateSurroundingCitiesItem = _.template($('#js__surrounding-cities-item-template').html());
+                _.each(surrounding_cities, function(item){
+                    console.log(item);
+                    contentSurroundingCities += templateSurroundingCitiesItem(item);
+                });
+
+
+
+                $('.js__surrounding_cities').html(contentSurroundingCities);*/
             });
         },
 

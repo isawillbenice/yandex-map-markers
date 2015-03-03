@@ -61,6 +61,7 @@ define('yandex-map-markers', [
         }
 
         self.setCenterByAddress(address_full);
+        self.showMainAddresses();
 
         $('.js__select-address').removeClass('active');
         $('.js__select-address[data-id= "'+ id + '"]').addClass('active');

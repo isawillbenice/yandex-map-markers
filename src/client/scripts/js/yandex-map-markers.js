@@ -157,18 +157,20 @@ define('yandex-map-markers', [
         self.map_id = map_id;
         self.options = options;
 
-        if($('#' + self.map_id).length <= 0){
-            console.warn('%ctrace: Map: not found dom elements', 'color: #ccc');
-            return false;
-        }
+        domReady(function () {
+            if($('#' + self.map_id).length <= 0){
+                console.warn('%ctrace: Map: not found dom elements', 'color: #ccc');
+                return false;
+            }
 
-        new YandexMapApi();
+            new YandexMapApi();
 
-        self.init_routes();
+            self.init_routes();
 
-        if(!window.location.hash){
-            __dataLoader();
-        }
+            if(!window.location.hash){
+                __dataLoader();
+            }
+        });
     }
 
     Map.prototype = {

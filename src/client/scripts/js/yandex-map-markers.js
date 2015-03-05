@@ -35,9 +35,9 @@ define('yandex-map-markers', [
     var __balloonTemplate = function() {
         self.marker_balloon_layout = ymaps.templateLayoutFactory.createClass(
             '<div class="baloon-content">' +
-            '<div class="baloon-title">$[properties.name]</div>' +
-            '<div class="baloon-region">$[properties.region], $[properties.city]</div>' +
-            '<div class="baloon-address">$[properties.address]</div>' +
+                '<div class="baloon-title">$[properties.name]</div>' +
+                '<div class="baloon-city">$[properties.city]</div>' +
+                '<div class="baloon-address">$[properties.address]</div>' +
             '</div>'
         );
         ymaps.layout.storage.add('map#marker_balloon_layout', self.marker_balloon_layout);
@@ -208,8 +208,10 @@ define('yandex-map-markers', [
                 clusterize: true,
                 geoObjectPreset: 'islands#greenDotIcon',
                 geoObjectBalloonContentLayout: self.marker_balloon_layout,
-                geoObjectBalloonMaxWidth: 505,
-                geoObjectBalloonMaxHeight: 215,
+                /*geoObjectBalloonMaxWidth: 200,
+                geoObjectBalloonMinWidth: 200,
+                geoObjectBalloonMaxHeight: 150,
+                geoObjectBalloonMinHeight: 150,*/
                 geoObjectHideIconOnBalloonOpen: false,
                 geoObjectIconLayout: 'default#image',
                 geoObjectIconImageHref: map_options.markers_options.iconImageHref,
@@ -217,8 +219,10 @@ define('yandex-map-markers', [
                 geoObjectIconImageOffset: [-18, -18],
                 clusterBalloonContentLayout: 'cluster#balloonCarouselContent',
                 clusterBalloonItemContentLayout: self.marker_balloon_layout,
-                clusterBalloonMaxWidth: 505,
-                clusterBalloonMaxHeight: 215,
+                /*clusterBalloonMaxWidth: 200,
+                clusterBalloonMinWidth: 200,
+                clusterBalloonMaxHeight: 150,
+                clusterBalloonMinHeight: 150,*/
                 clustergroupByCoordinates: false,
                 clusterDisableClickZoom: false,
                 clusterHideIconOnBalloonOpen: false

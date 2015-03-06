@@ -167,7 +167,7 @@ define('yandex-map-markers', [
 
             self.init_routes();
 
-            if(!window.location.hash){
+            if(!window.location.hash || window.location.hash == '#close' || window.location.hash == '#all'){
                 __dataLoader();
             }
         });
@@ -184,7 +184,7 @@ define('yandex-map-markers', [
             self.init_object_manager();
             self.add_markers();
 
-            if(!window.location.hash){
+            if(!window.location.hash || window.location.hash == 'close' || window.location.hash == 'all'){
                 self.geolocation();
             }
 
@@ -247,8 +247,6 @@ define('yandex-map-markers', [
                 self.getVisibleMarkers();
             });
 
-            $('body').on('click', '.js__show-all-addresses', _.bind(self.showAllAddresses, self));
-            $('body').on('click', '.js__show-main-addresses', _.bind(self.showMainAddresses, self));
             $('body').on('click', '.js__select-optics', _.bind(self.selectOptics, self));
         },
 
@@ -262,7 +260,9 @@ define('yandex-map-markers', [
 
             var Router = Backbone.Router.extend({
                 routes: {
-                    'city/:id': 'select_address'
+                    'city/:id': 'select_address',
+                    'all': 'show_all',
+                    'close': 'show_main'
                 }
             });
 
@@ -277,6 +277,14 @@ define('yandex-map-markers', [
                 __dataLoader().done(function() {
                     __select_address(id);
                 });
+            });
+
+            router.on('route:show_all', function () {
+                self.showAllAddresses();
+            });
+
+            router.on('route:show_main', function () {
+                self.showMainAddresses();
             });
         },
 

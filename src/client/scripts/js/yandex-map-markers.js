@@ -38,6 +38,7 @@ define('yandex-map-markers', [
                 '<div class="baloon-title">$[properties.name]</div>' +
                 '<div class="baloon-city">$[properties.city]</div>' +
                 '<div class="baloon-address">$[properties.address]</div>' +
+                '<div class="baloon-phone">$[properties.phone]</div>' +
             '</div>'
         );
         ymaps.layout.storage.add('map#marker_balloon_layout', self.marker_balloon_layout);
@@ -105,7 +106,8 @@ define('yandex-map-markers', [
             region: finded.properties.region,
             city: finded.properties.city,
             name: finded.properties.name,
-            description: finded.properties.description
+            description: finded.properties.description,
+            phone: finded.properties.phone
         };
 
         return finded_item;
@@ -371,6 +373,7 @@ define('yandex-map-markers', [
                     city: optic.properties.get('city'),
                     address: optic.properties.get('address'),
                     description: optic.properties.get('description'),
+                    phone: optic.properties.get('phone'),
                     i: i
                 };
 

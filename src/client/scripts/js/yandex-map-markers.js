@@ -191,6 +191,23 @@ define('yandex-map-markers', [
         return result;
     };
 
+    //Найти город по координатам
+    var __findCityByLatLng = function(lat, lng) {
+        var result;
+
+        _.find(self.collectionMarkers.features, function(object) {
+            var city_lat = parseFloat(object.properties.city_coordinates[0]);
+            var city_lng = parseFloat(object.properties.city_coordinates[1]);
+
+            if(city_lat === lat && city_lng === lng) {
+                result = object;
+                return true;
+            }
+        });
+
+        return result;
+    };
+
     //Получить уникальные города
     var __getCities = function() {
         var result = [];
@@ -435,7 +452,23 @@ define('yandex-map-markers', [
             );
 
             self.map.behaviors.disable('scrollZoom');
-            new ymaps.SuggestView('js__suggest-view');
+            self.suggestView = new ymaps.SuggestView('js__suggest-view', {
+                offset: [14, 1],
+                width: 378
+            });
+
+            /*self.suggestView.state.events.add('change', function () {
+                var $input = $('#js__suggest-view');
+                var activeIndex = self.suggestView.state.get('activeIndex');
+
+                if (typeof activeIndex === 'number') {
+                    var activeItem = self.suggestView.state.get('items')[activeIndex];
+                    if (activeItem && activeItem.value != $input.value) {
+                        $input.val(activeItem.value);
+                    }
+                }
+            });*/
+
         },
 
         //Инициализация шаблона для балунов
@@ -457,8 +490,6 @@ define('yandex-map-markers', [
         init_event_map_change: function() {
             self.map.events.add(['boundschange','datachange','objecttypeschange'], function(e){
                 self.getVisibleMarkers();
-                //чистим строку поиска
-                $('.js__search-value').val('');
             });
         },
 
@@ -553,6 +584,9 @@ define('yandex-map-markers', [
 
         //Показать баллун при клике по объекту под картой
         showObjectBalloon: function(e) {
+            //чистим строку поиска
+            $('.js__search-value').val('');
+
             var $el = $(e.currentTarget),
                 $id = $el.attr('data-id');
 
@@ -577,7 +611,7 @@ define('yandex-map-markers', [
                     }, 300);
                 });
 
-            self.$body.scrollTo('#map', {
+            self.$body.scrollTo('#map-title', {
                 duration: '800',
                 offsetTop : '250'
             });
@@ -587,6 +621,9 @@ define('yandex-map-markers', [
 
         //Геолокация
         geolocation: function() {
+            //чистим строку поиска
+            $('.js__search-value').val('');
+
             ymaps.geolocation.get({
                 provider: 'auto',
                 mapStateAutoApply: true
@@ -607,6 +644,8 @@ define('yandex-map-markers', [
                 self.map.setBounds(bounds, {
                     checkZoomRange: true
                 });
+
+                window.location.hash = '';
             });
         },
 
@@ -655,6 +694,8 @@ define('yandex-map-markers', [
 
         //Показать город на карте по id
         showCityById: function(id) {
+            //чистим строку поиска
+            $('.js__search-value').val('');
             __hide_modal();
 
             var item = self.objectManager.objects.getById(id);
@@ -738,6 +779,8 @@ define('yandex-map-markers', [
 
         //Показать метро на карте по id
         showStationById: function(id) {
+            //чистим строку поиска
+            $('.js__search-value').val('');
             __hide_modal();
 
             var item = __findStationById(id);
@@ -777,9 +820,13 @@ define('yandex-map-markers', [
                 kind: 'locality'
             }).then(function (res) {
                 var firstGeoObject = res.geoObjects.get(0);
-                var closestObject = ymaps.geoQuery(self.objectManager.objects).getClosestTo(firstGeoObject);
 
-                var bounds = ymaps.geoQuery(firstGeoObject).add(closestObject).getBounds();
+                if(__findCityByLatLng(firstGeoObject.geometry.getCoordinates()[0], firstGeoObject.geometry.getCoordinates()[1])) {
+                    var bounds = firstGeoObject.properties.get('boundedBy');
+                } else {
+                    var closestObject = ymaps.geoQuery(self.objectManager.objects).getClosestTo(firstGeoObject);
+                    var bounds = ymaps.geoQuery(firstGeoObject).add(closestObject).getBounds();
+                }
 
                 self.map.setBounds(bounds, {
                     checkZoomRange: true

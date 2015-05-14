@@ -110,6 +110,7 @@ define('yandex-map-markers', [
         }
 
         router.on('route:findAddress', function (str) {
+            var str = decodeURIComponent(str);
             $('.js__search-value').val(str);
             ymaps.geocode(str, {
                 results: 1,
@@ -132,6 +133,7 @@ define('yandex-map-markers', [
 
         if (window.location.hash.indexOf('#address') >= 0) {
             var str = window.location.hash.split('/')[1];
+            str = decodeURIComponent(str);
             $('.js__search-value').val(str);
             ymaps.geocode(str, {
                 results: 1,
@@ -468,7 +470,6 @@ define('yandex-map-markers', [
 
                 if($('#js__suggest-view').length > 0){
                     ymaps.ready(function() {
-                        console.log('init_suggestView');
                         self.init_suggestView();
                         $('body').on('click', '.js__search-btn', self.sendAddressToMapPage);
                     });
@@ -511,7 +512,7 @@ define('yandex-map-markers', [
                 return false;
             }
 
-            window.location.href = '/map#address/' + $address;
+            window.location.href = '/map#address/' + encodeURIComponent($address);
         },
 
         //Инициализация SuggestView для поиска

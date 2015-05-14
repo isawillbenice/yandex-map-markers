@@ -108,6 +108,49 @@ define('yandex-map-markers', [
             var id = window.location.hash.split('/')[2];
             self.showStationById(id);
         }
+
+        router.on('route:findAddress', function (str) {
+            $('.js__search-value').val(str);
+            ymaps.geocode(str, {
+                results: 1,
+                kind: 'locality'
+            }).then(function (res) {
+                var firstGeoObject = res.geoObjects.get(0);
+
+                if(__findCityByLatLng(firstGeoObject.geometry.getCoordinates()[0], firstGeoObject.geometry.getCoordinates()[1])) {
+                    var bounds = firstGeoObject.properties.get('boundedBy');
+                } else {
+                    var closestObject = ymaps.geoQuery(self.objectManager.objects).getClosestTo(firstGeoObject);
+                    var bounds = ymaps.geoQuery(firstGeoObject).add(closestObject).getBounds();
+                }
+
+                self.map.setBounds(bounds, {
+                    checkZoomRange: true
+                });
+            });
+        });
+
+        if (window.location.hash.indexOf('#address') >= 0) {
+            var str = window.location.hash.split('/')[1];
+            $('.js__search-value').val(str);
+            ymaps.geocode(str, {
+                results: 1,
+                kind: 'locality'
+            }).then(function (res) {
+                var firstGeoObject = res.geoObjects.get(0);
+
+                if(__findCityByLatLng(firstGeoObject.geometry.getCoordinates()[0], firstGeoObject.geometry.getCoordinates()[1])) {
+                    var bounds = firstGeoObject.properties.get('boundedBy');
+                } else {
+                    var closestObject = ymaps.geoQuery(self.objectManager.objects).getClosestTo(firstGeoObject);
+                    var bounds = ymaps.geoQuery(firstGeoObject).add(closestObject).getBounds();
+                }
+
+                self.map.setBounds(bounds, {
+                    checkZoomRange: true
+                });
+            });
+        }
     };
 
     //Показать модалку
@@ -407,7 +450,8 @@ define('yandex-map-markers', [
                 'city/:id' : 'showCityById',
                 'metro' : 'showMetro',
                 'metro/line/:id' : 'showStationsByLineId',
-                'metro/station/:id' : 'showStationById'
+                'metro/station/:id' : 'showStationById',
+                'address/:str' : 'findAddress'
             }
         });
 
@@ -421,6 +465,15 @@ define('yandex-map-markers', [
         domReady(function () {
             if($('#' + self.map_id).length <= 0){
                 console.warn('%ctrace: Map: not found dom elements', 'color: #ccc');
+
+                if($('#js__suggest-view').length > 0){
+                    ymaps.ready(function() {
+                        self.init_suggestView();
+
+                        $('body').on('click', '.js__search-btn', self.sendAddressToMapPage);
+                    });
+                }
+
                 return false;
             }
 
@@ -441,6 +494,32 @@ define('yandex-map-markers', [
             self.init_my_controls();
             self.init_object_manager();
             self.add_markers();
+        },
+
+        sendAddressToMapPage: function() {
+            event.preventDefault();
+
+            var $address = $('.js__search-value').val();
+            if (!$address) {
+                $('.js__search-value').val('');
+                $('.js__search-value').addClass("shake animated");
+
+                setTimeout(function() {
+                    $('.js__search-value').removeClass("shake animated");
+                }, 1000);
+
+                return false;
+            }
+
+            window.location.href = '/map#address/' + $address;
+        },
+
+        //Инициализация SuggestView для поиска
+        init_suggestView: function() {
+            self.suggestView = new ymaps.SuggestView('js__suggest-view', {
+                offset: [8, 1],
+                width: 348
+            });
         },
 
         //Инициализация карты

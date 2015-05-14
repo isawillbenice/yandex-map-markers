@@ -468,8 +468,8 @@ define('yandex-map-markers', [
 
                 if($('#js__suggest-view').length > 0){
                     ymaps.ready(function() {
+                        console.log('init_suggestView');
                         self.init_suggestView();
-
                         $('body').on('click', '.js__search-btn', self.sendAddressToMapPage);
                     });
                 }
@@ -496,7 +496,7 @@ define('yandex-map-markers', [
             self.add_markers();
         },
 
-        sendAddressToMapPage: function() {
+        sendAddressToMapPage: function(event) {
             event.preventDefault();
 
             var $address = $('.js__search-value').val();
@@ -883,6 +883,7 @@ define('yandex-map-markers', [
             event.preventDefault();
 
             var $address = $('.js__search-value').val();
+
             if (!$address) {
                 $('.js__search-value').val('');
                 $('.js__search-value').addClass("shake animated");

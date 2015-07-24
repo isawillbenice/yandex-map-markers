@@ -253,6 +253,44 @@ define('yandex-map-markers', [
         return result;
     };
 
+    //Найти город по координатам
+    var __findCityByNameFromDB = function(city) {
+        city = city.toLowerCase();
+
+        var result,
+            cityPrefix = ['пос. ', 'г. ', 'станица ', 'с. '],
+            prefix;
+
+        self.collectionMarkers.features.forEach(function(object, i) {
+            var cityDB = object.properties.city;
+
+            if (cityDB.indexOf(cityPrefix[0]) >= 0) {
+                prefix = cityPrefix[0];
+            }
+
+            else if (cityDB.indexOf(cityPrefix[1]) >= 0) {
+                prefix = cityPrefix[1];
+            }
+
+            else if (cityDB.indexOf(cityPrefix[2]) >= 0) {
+                prefix = cityPrefix[2];
+            }
+
+            else if (cityDB.indexOf(cityPrefix[3]) >= 0) {
+                prefix = cityPrefix[3];
+            }
+
+            cityDB = cityDB.slice(prefix.length, cityDB.length);
+            cityDB = cityDB.toLowerCase();
+
+            if (city.indexOf(cityDB) >= 0) {
+                result = object;
+            }
+        });
+
+        return result;
+    };
+
     //Получить уникальные города
     var __getCities = function() {
         var result = [];
@@ -901,8 +939,9 @@ define('yandex-map-markers', [
                 kind: 'locality'
             }).then(function (res) {
                 var firstGeoObject = res.geoObjects.get(0);
+                var firstGeoObjectCity = res.geoObjects.get(0).properties.get('metaDataProperty').GeocoderMetaData.AddressDetails.Country.AddressLine;
 
-                if(__findCityByLatLng(firstGeoObject.geometry.getCoordinates()[0], firstGeoObject.geometry.getCoordinates()[1])) {
+                if(__findCityByNameFromDB(firstGeoObjectCity)) {
                     var bounds = firstGeoObject.properties.get('boundedBy');
                 } else {
                     var closestObject = ymaps.geoQuery(self.objectManager.objects).getClosestTo(firstGeoObject);

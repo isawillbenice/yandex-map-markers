@@ -824,7 +824,7 @@ define('yandex-map-markers', [
 
             var address_full;
 
-            if(item.properties.city == 'г. Москва') {
+            if(item.properties.city.search('Москва') >= 0) {
                 address_full = 'Россия, ' + item.properties.city;
             } else {
                 address_full = 'Россия, ' + item.properties.region + ', ' + item.properties.city;
